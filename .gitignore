@@ -1,0 +1,10 @@
+*.7z
+*.ilk
+*.tlog
+*.log
+*.idb
+*.sdf
+*.opensdf
+*.suo
+*.pdb
+boost_1_59_0/

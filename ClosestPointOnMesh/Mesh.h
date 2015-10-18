@@ -24,6 +24,11 @@ struct simple_point
 	{
 		return simple_point(x * p.x, y * p.y, z * p.z);
 	}
+	int operator!=(const simple_point& p)
+	{
+		int equal = !(p.x == x && p.y == y && p.z == z);
+		return equal;
+	}
 	double x, y, z;
 };
 

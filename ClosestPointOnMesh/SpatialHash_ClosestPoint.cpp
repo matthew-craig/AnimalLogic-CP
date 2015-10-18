@@ -34,7 +34,7 @@ void ClosestPointQuery::populate_buckets()
 		hashmap.emplace(p, idx);
 		pts++;
 	}
-	std::cout << "Populated " << pts << " points to hashmap" << "\n";
+	std::cout << "populated " << pts << " points to hashmap" << "\n";
 }
 
 void ClosestPointQuery::calculate_bounding_box()
@@ -58,9 +58,9 @@ void ClosestPointQuery::calculate_bounding_box()
 	bb_center.y = bb_min.y + (bb_max.y - bb_min.y) / 2.0;
 	bb_center.z = bb_min.z + (bb_max.z - bb_min.z) / 2.0;
 
-	std::cout << "Obj bb min x " << bb_min.x << " y " << bb_min.y << " z " << bb_min.z << "\n";
-	std::cout << "Obj bb max x " << bb_max.x << " y " << bb_max.y << " z " << bb_max.z << "\n";
-	std::cout << "Obj bb center x " << bb_center.x << " y " << bb_center.y << " z " << bb_center.z << "\n";
+	std::cout << "mesh bb min x " << bb_min.x << " y " << bb_min.y << " z " << bb_min.z << "\n";
+	std::cout << "mesh bb max x " << bb_max.x << " y " << bb_max.y << " z " << bb_max.z << "\n";
+	std::cout << "mesh bb center x " << bb_center.x << " y " << bb_center.y << " z " << bb_center.z << "\n";
 }
 
 int inline ClosestPointQuery::get_intersection(double dist1, double dist2, simple_point p1, simple_point p2, simple_point &Hit, std::string debug) const
@@ -119,29 +119,57 @@ simple_point ClosestPointQuery::get_bb_intersection(const simple_point& p) const
 	return hit_point;
 }
 
-std::vector<simple_point>* ClosestPointQuery::get_points(const simple_point& p) const
+std::vector<simple_point>* ClosestPointQuery::get_points(const simple_point& p, double max_dist) const
 {
 	std::vector<simple_point>* points = new std::vector<simple_point>;
+
 	/*
 	for (auto it = hashmap.find(p); it != hashmap.end(); it++)
 	{
 		points->push_back(it->first);
 	}
 	*/
-	discrete_point cidx = cell(p);
-	std::cout << "query cell x " << cidx.a << " y " << cidx.b << " z " << cidx.c << "\n";
+
+	// Determine the number of neighbouring cells to search based on cell size and max dist
+	int grid_dimensions = boost::math::iround(max_dist / cell_size);
+	grid_dimensions = (grid_dimensions * 2) + 1;
+	std::cout << "searching grid of dimensions " << grid_dimensions << "\n";
 
 	std::cout << "hashmap size " << hashmap.size() << "\n";
 	std::cout << "hashmap buckets " << hashmap.bucket_count() << "\n";
-	std::cout << "hashmap bucket " << hashmap.bucket(p) << "\n";
-	std::cout << "hashmap count " << hashmap.count(p) << "\n\n";
-	auto range = hashmap.equal_range(p);
-	for (auto it = range.first; it != range.second; ++it)
+	std::cout << "\n";
+
+	int cells_visited = 0;
+
+	simple_point origin = simple_point(p.x - max_dist, p.y - max_dist, p.z - max_dist);
+
+	// Retrieve points from all the required cells
+	for (int x = 0; x < grid_dimensions; x++)
 	{
-		points->push_back(it->first);
+		for (int y = 0; y < grid_dimensions; y++)
+		{
+			for (int z = 0; z < grid_dimensions; z++)
+			{
+				//std::cout << "fetching grid x " << x << " y " << y << " z " << z << "\n";
+				simple_point point = simple_point(origin.x + x, origin.y + y, origin.z + z);
+				discrete_point cidx = cell(point);
+				std::cout << "querying cell x " << cidx.a << " y " << cidx.b << " z " << cidx.c << "\n";
+				//std::cout << "fetching contents of cell x " << cidx.a << " y " << cidx.b << " z " << cidx.c << "\n";
+				auto range = hashmap.equal_range(point);
+				for (auto it = range.first; it != range.second; ++it)
+				{
+					points->push_back(it->first);
+				}
+				cells_visited++;
+			}
+		}
 	}
+
+	std::cout << "\n";
+	std::cout << "cells visited " << cells_visited << "\n";
 	
 	// Show hash distributions useful for debugging cell size changes
+	/*
 	for (size_t v = 0; v < mesh->shapes[0].mesh.positions.size() / 3; v++)
 	{
 		simple_point p = simple_point(mesh->shapes[0].mesh.positions[3 * v + 0],
@@ -150,10 +178,18 @@ std::vector<simple_point>* ClosestPointQuery::get_points(const simple_point& p) 
 
 		int count = hashmap.count(p);
 		std::cout << "hashmap count " << hashmap.count(p) << "\n";
-		//std::cout << "point x " << p.x << " y " << p.y << " z " << p.z << "\n";
+		std::cout << "point x " << p.x << " y " << p.y << " z " << p.z << "\n";
 	}
-	
+	*/
 	return points;
+}
+
+inline double ClosestPointQuery::get_distance(const simple_point& p1, const simple_point& p2) const
+{
+	double dx2 = (p1.x - p2.x) * (p1.x - p2.x);
+	double dy2 = (p1.y - p2.y) * (p1.y - p2.y);
+	double dz2 = (p1.z - p2.z) * (p1.z - p2.z);
+	return sqrt(dx2 + dy2 + dz2);
 }
 
 simple_point ClosestPointQuery::operator()(const simple_point& queryPoint, float maxDist) const
@@ -161,18 +197,37 @@ simple_point ClosestPointQuery::operator()(const simple_point& queryPoint, float
 	// find the intersection point of a line from the query point to the meshes bounding box
 	simple_point hit_point = get_bb_intersection(queryPoint);
 
+	std::cout << "\n";
 	std::cout << "query point x " << queryPoint.x << " y " << queryPoint.y << " z " << queryPoint.z << " intersects mesh at hit point x " << hit_point.x << " y " << hit_point.y << " z " << hit_point.z << "\n";
 
 	// search outwards from the intersection point up to maxDist for 
-	std::vector<simple_point>* pts = get_points(hit_point);
+	std::vector<simple_point>* pts = get_points(hit_point,maxDist);
 
-	std::cout << "\nfound " << pts->size() << " points\n";
+	std::cout << "found " << pts->size() << " points\n";
 
 	// check resulting points to confirm which one is actually closest
+	simple_point best_point = simple_point(-1.0, -1.0, -1.0);
 	if (pts->size() > 0)
 	{
-
+		double min_dist = -1.0;
+		for (auto it = pts->begin(); it != pts->end(); ++it)
+		{
+			double dist = get_distance(queryPoint,*it);
+			if (min_dist == -1.0)
+			{
+				min_dist = dist;
+				best_point = *it;
+			}
+			else
+			{
+				if (dist < min_dist)
+				{
+					min_dist = dist;
+					best_point = *it;
+				}
+			}
+		}
 	}
 
-	return simple_point(1.0f, 1.0f, 1.0f);
+	return best_point;
 }

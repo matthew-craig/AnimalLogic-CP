@@ -29,6 +29,7 @@ Mesh::Mesh(std::string inputfile)
 				shapes[i].mesh.positions[3 * v + 2]);
 		}
 	}
+	std::cout << "\n";
 	/*
 	for (size_t i = 0; i < materials.size(); i++) {
 		printf("material[%ld].name = %s\n", i, materials[i].name.c_str());

@@ -104,7 +104,8 @@ public:
 
 	// Spatial Hashing Operations
 	void populate_buckets();
-	std::vector<simple_point>* get_points(const simple_point& p) const;
+	std::vector<simple_point>* get_points(const simple_point& p, double max_dist = cell_size) const;
+	double get_distance(const simple_point& p1, const simple_point& p2) const;
 
 	static double cell_size;
 	static unsigned int max_buckets;

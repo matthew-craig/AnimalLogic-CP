@@ -43,7 +43,7 @@ https://github.com/syoyo/tinyobjloader
 
 Running:
 
-I've included the executable in the git repo and it should run as is.
+I've included the executable in the git repo look in the Data folder it should run as is.
 
 Note that the executable looks to load 2 obj files simplesphere.obj and largesphere.obj
 that should be present in the Data directory. Note that the largesphere submitted to

@@ -45,6 +45,14 @@ Running:
 
 I've included the executable in the git repo look in the Data folder it should run as is.
 
+To build the solution please ensure the following steps are taken:
+1. Unzip boost_1_59_0.7z into boost_1_59_0
+2. Switch to boost_1_59_0 folder in a visual studio command prompt and type
+    bootstrap
+    .\b2
+3. git clone tinyobjloader in the root folder from the root folder git clone https://github.com/syoyo/tinyobjloader.git
+4. When building the solution ensure either Debug or Release x86 is selected
+
 Note that the executable looks to load 2 obj files simplesphere.obj and largesphere.obj
 that should be present in the Data directory. Note that the largesphere submitted to
 the git repo is significantly smaller than what I tested with, I used a file containing

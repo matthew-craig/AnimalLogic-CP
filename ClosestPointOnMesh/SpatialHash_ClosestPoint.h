@@ -1,48 +1,14 @@
 #pragma once
-//#include <boost/numeric/ublas/vector.hpp>
-//#include <boost/numeric/ublas/io.hpp>
-
 #include "Mesh.h"
 
 #include <boost/unordered_map.hpp>
 #include <boost/math/special_functions/round.hpp>
-
-//using namespace boost::numeric::ublas;
-//using namespace boost::geometry::concept;
-
-/*
-
-vector<double> v(3);
-for (unsigned i = 0; i < v.size(); ++i)
-	v(i) = i;
-std::cout << v << std::endl;
-*/
-/*
-struct point_hash : std::unary_function<simple_point, std::size_t>
-{
-	std::size_t operator()(simple_point const& p) const
-	{
-		int xh = (int)floor((double)p.x / cell_size);
-		int yh = (int)floor((double)p.y / cell_size);
-		int zh = (int)floor((double)p.z / cell_size);
-
-		std::size_t seed = 0;
-		boost::hash_combine(seed, )
-	}
-};
-*/
-
-//typedef vector<double> vecd;
-//typedef unsigned int data_t;
-// <key,payload,hash fn, equality fn>
-//typedef boost::unordered_multimap<simple_point, polygon_indices> polygon_hashmap;
 
 class ClosestPointQuery
 {
 public:
 
 	ClosestPointQuery(const Mesh& m, double init_cell_size, unsigned int init_max_buckets);
-	simple_point operator()(const simple_point& queryPoint, float maxDist) const;
 
 	static inline discrete_point cell(simple_point const& p)
 	{
@@ -51,20 +17,10 @@ public:
 			boost::math::iround(p.z / cell_size));
 	}
 
-	/*
-	inline unsigned int hash_point(const simple_point& p) const
-	{
-		int xh = (int)floor((double)p.x / cell_size);
-		int yh = (int)floor((double)p.y / cell_size);
-		int zh = (int)floor((double)p.z / cell_size);
-		return (xh * 73856093 ^ yh * 19349663 ^ zh * 83492791) % max_buckets;
-	}
-	*/
 	struct point_equal_to : std::binary_function<simple_point, simple_point, bool>
 	{
 		bool operator()(simple_point const& p1, simple_point const& p2) const
 		{
-			//return  p1.x == p2.x && p1.y == p2.y && p1.z == p2.z;
 			// Just return true as we don't want the underlying container to try and resolve hash conflicts we want points to map to the same buckets/cells
 			return true;
 		}
@@ -75,17 +31,11 @@ public:
 		std::size_t operator()(simple_point const& p) const
 		{
 			std::size_t seed = 0;
-			//int xh = boost::math::iround(p.x / cell_size);
-			//int yh = boost::math::iround(p.y / cell_size);
-			//int zh = boost::math::iround(p.z / cell_size);
 			discrete_point cidx = cell(p);
 			//std::cout << "xh " << xh << " yh " << yh << " zh " << zh << "\n";
 			boost::hash_combine(seed, cidx.a * 73856093);
 			boost::hash_combine(seed, cidx.b * 19349663);
 			boost::hash_combine(seed, cidx.c * 83492791);
-			//boost::hash_combine(seed, xh * 73856093);
-			//boost::hash_combine(seed, yh * 19349663);
-			//boost::hash_combine(seed, zh * 83492791);
 			//std::cout << "key " << seed << "\n";
 			return seed;
 		}
@@ -103,8 +53,10 @@ public:
 	simple_point bb_center;
 
 	// Spatial Hashing Operations
+	simple_point operator()(const simple_point& queryPoint, const double maxDist = cell_size, int brute_force = 0) const;
 	void populate_buckets();
-	std::vector<simple_point>* get_points(const simple_point& p, double max_dist = cell_size) const;
+	std::vector<simple_point>* get_points(const simple_point& p, const double max_dist = cell_size) const;
+	std::vector<simple_point>* get_points_brute_force(const simple_point& p, const double max_dist = cell_size) const;
 	double get_distance(const simple_point& p1, const simple_point& p2) const;
 
 	static double cell_size;

@@ -11,6 +11,8 @@ Mesh::Mesh(std::string inputfile)
 	std::cout << "# of shapes    : " << shapes.size() << std::endl;
 	std::cout << "# of materials : " << materials.size() << std::endl;
 
+	// Uncomment to output full obj information useful for debugging
+	/*
 	for (size_t i = 0; i < shapes.size(); i++) {
 		printf("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
 		printf("Size of shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
@@ -30,7 +32,7 @@ Mesh::Mesh(std::string inputfile)
 		}
 	}
 	std::cout << "\n";
-	/*
+	
 	for (size_t i = 0; i < materials.size(); i++) {
 		printf("material[%ld].name = %s\n", i, materials[i].name.c_str());
 		printf("  material.Ka = (%f, %f ,%f)\n", materials[i].ambient[0], materials[i].ambient[1], materials[i].ambient[2]);

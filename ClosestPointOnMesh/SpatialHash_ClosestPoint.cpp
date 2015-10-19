@@ -15,6 +15,9 @@ ClosestPointQuery::ClosestPointQuery(const Mesh& m, double init_cell_size, unsig
 
 void ClosestPointQuery::populate_buckets()
 {
+	if (mesh->shapes.size() == 0)
+		return;
+
 	hashmap.clear();
 	unsigned long pts = 0;
 	for (size_t v = 0; v < mesh->shapes[0].mesh.positions.size() / 3; v++)
@@ -23,9 +26,10 @@ void ClosestPointQuery::populate_buckets()
 			mesh->shapes[0].mesh.positions[3 * v + 1],
 			mesh->shapes[0].mesh.positions[3 * v + 2]);
 
-		// Tbd store indice lookups
+		// TBD we can store 3 indice lookups per point here to make it easy to retrieve the polys the point belongs to later
+		// that can then be tested for facing and finding the exact barycentric collision co-ordinates
 		/*
-		polygon_indices p = polygon_indices(mesh->shapes[0].mesh.indices[3 * f + 0],
+		discrete_point p = discrete_point(mesh->shapes[0].mesh.indices[3 * f + 0],
 			mesh->shapes[0].mesh.positions[3 * v + 1],
 			mesh->shapes[0].mesh.positions[3 * v + 2]);
 		*/
@@ -39,6 +43,9 @@ void ClosestPointQuery::populate_buckets()
 
 void ClosestPointQuery::calculate_bounding_box()
 {
+	if (mesh->shapes.size() == 0)
+		return;
+
 	for (size_t v = 0; v < mesh->shapes[0].mesh.positions.size() / 3; v++)
 	{
 		simple_point p = simple_point(mesh->shapes[0].mesh.positions[3 * v + 0],
@@ -119,22 +126,36 @@ simple_point ClosestPointQuery::get_bb_intersection(const simple_point& p) const
 	return hit_point;
 }
 
+// Just included to give a baseline comparison
+std::vector<simple_point>* ClosestPointQuery::get_points_brute_force(const simple_point& p, double max_dist) const
+{
+	if (mesh->shapes.size() == 0)
+		return nullptr;
+
+	std::vector<simple_point>* points = new std::vector<simple_point>;
+
+	for (size_t v = 0; v < mesh->shapes[0].mesh.positions.size() / 3; v++)
+	{
+		simple_point p = simple_point(mesh->shapes[0].mesh.positions[3 * v + 0],
+			mesh->shapes[0].mesh.positions[3 * v + 1],
+			mesh->shapes[0].mesh.positions[3 * v + 2]);
+
+		points->push_back(p);
+	}
+
+	return points;
+}
+
 std::vector<simple_point>* ClosestPointQuery::get_points(const simple_point& p, double max_dist) const
 {
 	std::vector<simple_point>* points = new std::vector<simple_point>;
 
-	/*
-	for (auto it = hashmap.find(p); it != hashmap.end(); it++)
-	{
-		points->push_back(it->first);
-	}
-	*/
-
 	// Determine the number of neighbouring cells to search based on cell size and max dist
 	int grid_dimensions = boost::math::iround(max_dist / cell_size);
 	grid_dimensions = (grid_dimensions * 2) + 1;
-	std::cout << "searching grid of dimensions " << grid_dimensions << "\n";
+	std::cout << "searching grid dimensions " << grid_dimensions << "\n";
 
+	// Useful debug information
 	std::cout << "hashmap size " << hashmap.size() << "\n";
 	std::cout << "hashmap buckets " << hashmap.bucket_count() << "\n";
 	std::cout << "\n";
@@ -192,7 +213,7 @@ inline double ClosestPointQuery::get_distance(const simple_point& p1, const simp
 	return sqrt(dx2 + dy2 + dz2);
 }
 
-simple_point ClosestPointQuery::operator()(const simple_point& queryPoint, float maxDist) const
+simple_point ClosestPointQuery::operator()(const simple_point& queryPoint, const double maxDist, int brute_force) const
 {
 	// find the intersection point of a line from the query point to the meshes bounding box
 	simple_point hit_point = get_bb_intersection(queryPoint);
@@ -201,9 +222,21 @@ simple_point ClosestPointQuery::operator()(const simple_point& queryPoint, float
 	std::cout << "query point x " << queryPoint.x << " y " << queryPoint.y << " z " << queryPoint.z << " intersects mesh at hit point x " << hit_point.x << " y " << hit_point.y << " z " << hit_point.z << "\n";
 
 	// search outwards from the intersection point up to maxDist for 
-	std::vector<simple_point>* pts = get_points(hit_point,maxDist);
+	std::vector<simple_point>* pts = nullptr;
+	if (brute_force)
+	{
+		// just for speed comparisons
+		pts = get_points_brute_force(hit_point, maxDist);
+	}
+	else
+	{
+		pts = get_points(hit_point, maxDist);
+	}
 
-	std::cout << "found " << pts->size() << " points\n";
+	if (pts != nullptr)
+		std::cout << "searched " << pts->size() << " points\n";
+	else
+		return simple_point(-1.0, -1.0, -1.0);
 
 	// check resulting points to confirm which one is actually closest
 	simple_point best_point = simple_point(-1.0, -1.0, -1.0);

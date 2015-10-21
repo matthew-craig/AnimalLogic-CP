@@ -76,8 +76,8 @@ found I'd encourage you to replace it with any larger file though please ensure 
 run x64 for larger files.
 
 You may note that for smaller meshes just brute forcing the solution is faster, larger
-meshes are required to note the performance of spatial hashing as shown above it is 2x
-faster (prior to any further optimizations) for a mesh with ~1.5 million points
+meshes are required to note the performance of spatial hashing as shown above it is 4x
+faster (prior to any further optimizations) for a mesh with ~6.5 million points
 
 Improvements:
 

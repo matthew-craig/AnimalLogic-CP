@@ -50,32 +50,30 @@ To build the solution please ensure the following steps are taken:
 2. Switch to boost_1_59_0 folder in a visual studio command prompt and type
     bootstrap
     .\b2
+    or to build 64 bit libs
+    .\b2 variant=release address-model=64
 3. git clone tinyobjloader in the root folder from the root folder git clone https://github.com/syoyo/tinyobjloader.git
-4. When building the solution ensure either Debug or Release x86 is selected
+4. When building the solution ensure either Debug x86 or Release x86|x64 is selected
 
 Note that the executable looks to load 2 obj files simplesphere.obj and largesphere.obj
 that should be present in the Data directory. Note that the largesphere submitted to
 the git repo is significantly smaller than what I tested with, I used a file containing
-1597442 verts this takes roughly 30 seconds to load and produced the following stats:
+6389762 verts this takes roughly 2 minutes to load (must be loaded with x64 exe) 
+and produced the following stats:
 
 Spatial Hashmap
-searched 143018 points
- 0.03s wall, 0.00s user + 0.02s system = 0.02s CPU (49.8%)
-closest point to query point is x -1.11349 y 5.46006 z -1.02317
+searched 569366 points
+ 0.05s wall, 0.02s user + 0.00s system = 0.02s CPU (28.9%)
+closest point to query point is x -1.11517 y 5.46004 z -1.02395
 
 Brute Force
-searched 1601153 points
- 0.06s wall, 0.03s user + 0.03s system = 0.06s CPU (102.4%)
-closest point to query point is x -1.11349 y 5.46006 z -1.02317
+searched 6397147 points
+ 0.22s wall, 0.17s user + 0.05s system = 0.22s CPU (97.9%)
+closest point to query point is x -1.11517 y 5.46004 z -1.02395
 
 The one in the git repo is hardly a large file I just included it so the file can be
-found I'd encourage you to replace it with any larger file though I'd recommend not
-going over 2GB in size as I crashed tinyobjloader when I tried that.
-
-You should be able to replace either file with any obj file exported from Maya though
-when I tried to load a 3GB file with 6389762 verts tinyobjloader failed allocating 
-memory :-/ the loader wasn't my primary concern initially and ease of use was more
-important.
+found I'd encourage you to replace it with any larger file though please ensure you
+run x64 for larger files.
 
 You may note that for smaller meshes just brute forcing the solution is faster, larger
 meshes are required to note the performance of spatial hashing as shown above it is 2x
@@ -90,6 +88,8 @@ Improvements:
 * Profile and refine it is likely there are further simple gains to be had from
   looking at object creation costs, data alignment etc. I had limited time to
   do any optimization so this is really just comparing at the big O level.
+* Control the number of buckets created by unordered_multimap its likely hurting performance
+  need to profile to confirm
 
 Additional Notes:
 

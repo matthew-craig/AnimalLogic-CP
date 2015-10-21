@@ -6,4 +6,6 @@
 *.opensdf
 *.suo
 *.pdb
+*.iobj
+*.ipdb
 boost_1_59_0/
